@@ -1067,6 +1067,16 @@ fn test_snowflake_trim() {
 }
 
 #[test]
+fn test_number_placehilder() {
+    let sql_only_select = "SELECT :1";
+    let select = snowflake().verified_only_select(sql_only_select);
+    assert_eq!(
+        &Expr::Value(Value::Placeholder(":1".into())),
+        expr_from_projection(only(&select.projection))
+    );
+}
+
+#[test]
 fn parse_agg_with_order_by() {
     for sql in [
         "SELECT column1, column2, FIRST_VALUE(column2) OVER (PARTITION BY column1 ORDER BY column2 NULLS LAST) AS column2_first FROM t1",
