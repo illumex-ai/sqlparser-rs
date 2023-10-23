@@ -1001,6 +1001,7 @@ fn test_copy_into_copy_options() {
 }
 
 #[test]
+// Todo: Make this work
 fn test_snowflake_stage_object_names() {
     let allowed_formatted_names = [
         "my_company.emp_basic",
@@ -1040,6 +1041,8 @@ fn test_snowflake_stage_object_names() {
         }
     }
 }
+
+// Todo: add test for slash
 
 #[test]
 fn test_snowflake_trim() {

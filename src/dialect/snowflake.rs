@@ -43,7 +43,7 @@ impl Dialect for SnowflakeDialect {
             || ch.is_ascii_digit()
             || ch == '$'
             || ch == '_'
-            || ch == '/'
+            // || ch == '/'
             || ch == '~'
     }
 
