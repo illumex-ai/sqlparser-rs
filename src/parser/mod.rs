@@ -1155,16 +1155,34 @@ impl<'a> Parser<'a> {
         })
     }
 
+    pub fn parse_optional_cast_format(&mut self) -> Result<Option<CastFormat>, ParserError> {
+        if self.parse_keyword(Keyword::FORMAT) {
+            let value = self.parse_value()?;
+            if self.parse_keywords(&[Keyword::AT, Keyword::TIME, Keyword::ZONE]) {
+                Ok(Some(CastFormat::ValueAtTimeZone(
+                    value,
+                    self.parse_value()?,
+                )))
+            } else {
+                Ok(Some(CastFormat::Value(value)))
+            }
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Parse a SQL CAST function e.g. `CAST(expr AS FLOAT)`
     pub fn parse_cast_expr(&mut self) -> Result<Expr, ParserError> {
         self.expect_token(&Token::LParen)?;
         let expr = self.parse_expr()?;
         self.expect_keyword(Keyword::AS)?;
         let data_type = self.parse_data_type()?;
+        let format = self.parse_optional_cast_format()?;
         self.expect_token(&Token::RParen)?;
         Ok(Expr::Cast {
             expr: Box::new(expr),
             data_type,
+            format,
         })
     }
 
@@ -1174,10 +1192,12 @@ impl<'a> Parser<'a> {
         let expr = self.parse_expr()?;
         self.expect_keyword(Keyword::AS)?;
         let data_type = self.parse_data_type()?;
+        let format = self.parse_optional_cast_format()?;
         self.expect_token(&Token::RParen)?;
         Ok(Expr::TryCast {
             expr: Box::new(expr),
             data_type,
+            format,
         })
     }
 
@@ -1187,10 +1207,12 @@ impl<'a> Parser<'a> {
         let expr = self.parse_expr()?;
         self.expect_keyword(Keyword::AS)?;
         let data_type = self.parse_data_type()?;
+        let format = self.parse_optional_cast_format()?;
         self.expect_token(&Token::RParen)?;
         Ok(Expr::SafeCast {
             expr: Box::new(expr),
             data_type,
+            format,
         })
     }
 
@@ -1926,10 +1948,21 @@ impl<'a> Parser<'a> {
                 | Keyword::BETWEEN
                 | Keyword::LIKE
                 | Keyword::ILIKE
-                | Keyword::SIMILAR => {
+                | Keyword::SIMILAR
+                | Keyword::REGEXP
+                | Keyword::RLIKE => {
                     self.prev_token();
                     let negated = self.parse_keyword(Keyword::NOT);
-                    if self.parse_keyword(Keyword::IN) {
+                    let regexp = self.parse_keyword(Keyword::REGEXP);
+                    let rlike = self.parse_keyword(Keyword::RLIKE);
+                    if regexp || rlike {
+                        Ok(Expr::RLike {
+                            negated,
+                            expr: Box::new(expr),
+                            pattern: Box::new(self.parse_subexpr(Self::LIKE_PREC)?),
+                            regexp,
+                        })
+                    } else if self.parse_keyword(Keyword::IN) {
                         self.parse_in(expr, negated)
                     } else if self.parse_keyword(Keyword::BETWEEN) {
                         self.parse_between(expr, negated)
@@ -2117,6 +2150,7 @@ impl<'a> Parser<'a> {
         Ok(Expr::Cast {
             expr: Box::new(expr),
             data_type: self.parse_data_type()?,
+            format: None,
         })
     }
 
@@ -2171,6 +2205,8 @@ impl<'a> Parser<'a> {
                 Token::Word(w) if w.keyword == Keyword::BETWEEN => Ok(Self::BETWEEN_PREC),
                 Token::Word(w) if w.keyword == Keyword::LIKE => Ok(Self::LIKE_PREC),
                 Token::Word(w) if w.keyword == Keyword::ILIKE => Ok(Self::LIKE_PREC),
+                Token::Word(w) if w.keyword == Keyword::RLIKE => Ok(Self::LIKE_PREC),
+                Token::Word(w) if w.keyword == Keyword::REGEXP => Ok(Self::LIKE_PREC),
                 Token::Word(w) if w.keyword == Keyword::SIMILAR => Ok(Self::LIKE_PREC),
                 _ => Ok(0),
             },
@@ -2179,6 +2215,8 @@ impl<'a> Parser<'a> {
             Token::Word(w) if w.keyword == Keyword::BETWEEN => Ok(Self::BETWEEN_PREC),
             Token::Word(w) if w.keyword == Keyword::LIKE => Ok(Self::LIKE_PREC),
             Token::Word(w) if w.keyword == Keyword::ILIKE => Ok(Self::LIKE_PREC),
+            Token::Word(w) if w.keyword == Keyword::RLIKE => Ok(Self::LIKE_PREC),
+            Token::Word(w) if w.keyword == Keyword::REGEXP => Ok(Self::LIKE_PREC),
             Token::Word(w) if w.keyword == Keyword::SIMILAR => Ok(Self::LIKE_PREC),
             Token::Word(w) if w.keyword == Keyword::OPERATOR => Ok(Self::BETWEEN_PREC),
             Token::Word(w) if w.keyword == Keyword::DIV => Ok(Self::MUL_DIV_MOD_OP_PREC),

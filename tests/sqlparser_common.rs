@@ -1938,6 +1938,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::BigInt(None),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -1948,6 +1949,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::TinyInt(None),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -1974,6 +1976,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Nvarchar(Some(50)),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -1984,6 +1987,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Clob(None),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -1994,6 +1998,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Clob(Some(50)),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -2004,6 +2009,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Binary(Some(50)),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -2014,6 +2020,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Varbinary(Some(50)),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -2024,6 +2031,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Blob(None),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -2034,6 +2042,7 @@ fn parse_cast() {
         &Expr::Cast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::Blob(Some(50)),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -2047,6 +2056,7 @@ fn parse_try_cast() {
         &Expr::TryCast {
             expr: Box::new(Expr::Identifier(Ident::new("id"))),
             data_type: DataType::BigInt(None),
+            format: None,
         },
         expr_from_projection(only(&select.projection))
     );
@@ -7659,4 +7669,9 @@ fn parse_create_type() {
         },
         create_type
     );
+}
+
+#[test]
+fn parse_create_table_collate() {
+    pg_and_generic().verified_stmt("CREATE TABLE tbl (foo INT, bar TEXT COLLATE \"de_DE\")");
 }
